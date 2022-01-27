@@ -1,0 +1,28 @@
+// A state diagram showing the states of this simple game
+digraph G {
+    rankdir=TB;
+
+    //node [shape=circle];
+
+    INITIAL
+    WAITING
+    //RUNNING [shape=circle]
+    STOPPED
+    RUNNING_U [label="RUNNING\nUNPRESSED"]
+    RUNNING_P [label="RUNNING\nYES PRESSING"];
+    INITIAL -> WAITING [label="release\nbegun_wait = now()"];
+    WAITING -> WAITING [label="time_passed"];
+    WAITING -> RUNNING_U [label="time_passed\nstart_time = now()"];
+    //RUNNING -> STOPPED [label="time_passed\n(now >= start + stop_delta)\n"]
+    RUNNING_U -> RUNNING_U [label="time_passed\n(now <  stop_time)\n1.Update timer display\n2.time_user_pressed # unchanged"] 
+    RUNNING_U -> RUNNING_P [label="pressed"];
+    RUNNING_P -> RUNNING_P [label="time_passed\n1.Increase time_spent_pressed"];
+    RUNNING_P -> RUNNING_U [label="release\n\n\n"];
+
+    RUNNING_P -> STOPPED [label="time_passed\n(now <  stop_time)"];
+    RUNNING_U -> STOPPED [label="time_passed\n(now <  stop_time)"];
+
+    STOPPED-> WAITING;
+
+
+}

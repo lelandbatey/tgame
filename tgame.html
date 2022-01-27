@@ -1,8 +1,16 @@
 <!DOCTYPE html>
 <html>
+<style type="text/css">
+body {margin: 0;}
+textarea {display: inherit;}
+button {display: inherit;}
+#container > * { font-size: clamp(13.333px, 3vw, 3rem); }
+</style>
 <body>
-    <textarea id='output' rows=4 cols="50"></textarea>
-    <button id='btn' style='height:3rem;'>Start the game?</button>
+    <div id="container" style="display: inline;">
+        <textarea id='output' style='height:99vh; width: 48vw;'></textarea>
+        <button id='btn' style='height:99vh; width: 48vw; vertical-align: top;'>Start the game?</button>
+    </div>
 </body>
 <script>
 "use strict";
@@ -27,7 +35,7 @@ function getRandomInt(min, max) {
 }
 
 function formatNumber(n) {
-    return String(n.toFixed(3)).padStart(8, '0');
+    return String(n.toFixed(3)).padStart(6, "0");
 }
 
 var STATE = {
@@ -124,12 +132,24 @@ ${formatNumber(percent)}% of the timer`;
 
 
 btn.addEventListener('mousedown', function(evnt){
+    console.log({'event': evnt});
+    if (evnt.button !== 0){
+        // evnt.button will be 0 if the user is clicking down on the left mouse
+        // button; we only want to respond to the left mouse button
+        return;
+    };
     STATE.user_currently_pressing = true;
     console.log(STATE);
     UpdateState(STATE, BUTTON_DOWN, time());
 });
 
 btn.addEventListener('mouseup', function(evnt){
+    console.log({'event': evnt});
+    if (evnt.button !== 0){
+        // evnt.button will be 0 if the user is releasing the left mouse
+        // button; we only want to respond to the left mouse button
+        return;
+    };
     STATE.user_currently_pressing = false;
     console.log(STATE);
     UpdateState(STATE, BUTTON_RELS, time());

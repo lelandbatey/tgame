@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <textarea id='output' rows=4 cols="50"></textarea>
+    <button id='btn' style='height:3rem;'>Start the game?</button>
+</body>
+<script>
+"use strict";
+
+var txt = document.querySelector('#output');
+var btn = document.querySelector('#btn');
+
+let INITIAL = 'INITIAL';
+let WAITING = 'WAITING';
+let TIMER_RUNNING = 'TIMER_RUNNING';
+let TIMER_STOPPED = 'TIMER_STOPPED';
+let FINISHED = 'FINISHED';
+
+let TIME_PASSED = 'TIME_PASSED';
+let BUTTON_DOWN = 'BUTTON_DOWN';
+let BUTTON_RELS = 'BUTTON_RELS';
+
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+}
+
+function formatNumber(n) {
+    return String(n.toFixed(3)).padStart(8, '0');
+}
+
+var STATE = {
+    statename: INITIAL,
+    seconds_user_holding_button: 0,
+    user_currently_pressing: false,
+    start_running_time: 0,
+    cease_running_time: 0,
+
+    ts_start_lastframe: Date.now(),
+    ts_start_curnframe: 0,
+};
+
+function time() {
+    return Date.now() / 1000;
+}
+
+var _ABSTS = 0;
+function calcAbsTS(ts) {
+    if (_ABSTS == 0) {
+        _ABSTS = time() - ts;
+    }
+    return ts + _ABSTS;
+};
+
+function UpdateState(state, evnt, ts) {
+    state.ts_start_lastframe = state.ts_start_curnframe;
+    state.ts_start_curnframe = ts;
+
+    if (state.statename == INITIAL) {
+        if (evnt == BUTTON_RELS) {
+            state.statename = WAITING;
+            var strt = time() + getRandomInt(4, 9);
+            var stop = strt + getRandomInt(3, 9);
+            state.start_running_time = strt;
+            state.cease_running_time = stop;
+        };
+    } else if (state.statename == WAITING) {
+        btn.textContent = "Don't click till the timer starts...";
+        if (state.ts_start_curnframe > state.start_running_time) {
+            state.statename = TIMER_RUNNING;
+        };
+    } else if (state.statename == TIMER_RUNNING) {
+        var frame_delta = state.ts_start_curnframe - state.ts_start_lastframe;
+        if (state.ts_start_curnframe < state.cease_running_time) {
+            var time_passed_string = formatNumber(time() - state.start_running_time);
+            txt.textContent = time_passed_string;
+            btn.textContent = "CLICK AND HOLD!";
+            if (state.user_currently_pressing) {
+                state.seconds_user_holding_button = state.seconds_user_holding_button + frame_delta;
+                btn.style.backgroundColor = "green";
+                btn.style.color = "white";
+            } else {
+                btn.style.backgroundColor = "red";
+                btn.style.color = "white";
+            };
+        } else {
+            if (state.user_currently_pressing) {
+                state.seconds_user_holding_button = state.seconds_user_holding_button - frame_delta;
+                btn.textContent = "Release the button!";
+                btn.style.backgroundColor = "red";
+                btn.style.color = "white";
+            } else {
+                state.statename = TIMER_STOPPED;
+                btn.style.backgroundColor = "";
+                btn.style.color = "";
+            };
+        }
+    } else if (state.statename == TIMER_STOPPED) {
+        var max_possible_seconds = state.cease_running_time - state.start_running_time;
+        var total_seconds = state.seconds_user_holding_button;
+        var click_time_ratio = total_seconds / (max_possible_seconds);
+        var percent = click_time_ratio * 100;
+        var msg = `clicked for ${formatNumber(total_seconds)} out of ${formatNumber(max_possible_seconds)} seconds
+missed: ${formatNumber(max_possible_seconds - total_seconds)} seconds
+${formatNumber(percent)}% of the timer`;
+        txt.textContent = msg;
+        btn.textContent = 'click to play again';
+        if (evnt == BUTTON_RELS) {
+            state.statename = INITIAL;
+            state.seconds_user_holding_button = 0;
+            txt.textContent = '';
+            btn.textContent = 'Click to start playing';
+        }
+    } else if (state.statename == FINISHED) {
+    };
+
+    if (evnt == TIME_PASSED) {
+        window.requestAnimationFrame(function(ts_){
+            UpdateState(state, TIME_PASSED, calcAbsTS(ts_/1000));
+        });
+    };
+}
+
+
+btn.addEventListener('mousedown', function(evnt){
+    STATE.user_currently_pressing = true;
+    console.log(STATE);
+    UpdateState(STATE, BUTTON_DOWN, time());
+});
+
+btn.addEventListener('mouseup', function(evnt){
+    STATE.user_currently_pressing = false;
+    console.log(STATE);
+    UpdateState(STATE, BUTTON_RELS, time());
+});
+
+(function(){
+    window.requestAnimationFrame(function(ts_){
+        UpdateState(STATE, TIME_PASSED, calcAbsTS(ts_/1000));
+    });
+})()
+
+
+</script>
+</html>
